@@ -1,0 +1,29 @@
+{
+  "name": "webportal",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@unique-nft/accounts": "^0.3.4",
+    "@unique-nft/sdk": "^0.2.5",
+    "@unique-nft/substrate-client": "^0.8.0",
+    "@unique-nft/utils": "^0.3.5",
+    "firebase": "^9.17.1",
+    "vue": "^3.2.45",
+    "vue-property-decorator": "^9.1.2",
+    "vue-router": "^4.1.6",
+    "vuefire": "^3.0.1",
+    "vuexfire": "^3.2.5"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^4.0.0",
+    "typescript": "^4.9.3",
+    "vite": "^4.1.0",
+    "vue-tsc": "^1.0.24"
+  }
+}
