@@ -5,8 +5,9 @@ import { Sdk, TokenByIdResponse, Options, IBalance } from "@unique-nft/sdk";
 import { IPolkadotExtensionAccount, Polkadot, IPolkadotExtensionLoadWalletsResult } from "@unique-nft/utils/extension"
 import { async } from '@firebase/util';
 // import { AccountTokensResult } from '@unique-nft/substrate-client/tokens';
-import{ AccountTokensResult} from '@unique-nft/substrate-client/tokens';
+import { AccountTokensResult } from '@unique-nft/substrate-client/tokens';
 import GoalsList from "./GoalsList.vue";
+// import {fs} from 'fs';
 
 
 const options: Options = {
@@ -17,6 +18,7 @@ const sdk = new Sdk(options)
 
 const accountRef = ref<IPolkadotExtensionAccount | null>(null)
 const walletResult = ref<IPolkadotExtensionLoadWalletsResult | null>(null)
+const tokenRef = ref<TokenByIdResponse | null>(null)
 let toAddress = ""
 let fromAddress = ""
 const accountBalance = ref<IBalance | null>(null);
@@ -51,7 +53,7 @@ onMounted(async () => {
     var sel = e.selectedIndex;
     var opt = e.options[sel];
     console.log((<HTMLSelectElement>opt).value);
-        
+
 })
 
 const getAccounts = async () => {
@@ -64,12 +66,12 @@ const getAccounts = async () => {
     loading.value = false;
 }
 
-function recordTransactions(msg:any){
+function recordTransactions(msg: any) {
     const newTrans = {
-          id: new Date().toISOString(),
-          text: msg,
-        };
-        goals.value.push(newTrans);
+        id: new Date().toISOString(),
+        text: msg,
+    };
+    goals.value.push(newTrans);
 }
 
 function getSelectedItem(ele: any) {
@@ -80,26 +82,27 @@ function getSelectedItem(ele: any) {
     return (<HTMLSelectElement>opt).value;
 }
 
-const getAccount = async (event: any) => {
+const getMainAccount = async (event: any) => {
     loading.value = true;
     fromAddress = event
     console.log(event)
     console.log(fromAddress)
     getMyBalance()
     loading.value = false;
-    recordTransactions("Selected Account "+event)
+    recordTransactions("Selected Account " + event)
+    // getOwnTokens()
 }
 
 const getTokenIDSelectedDT = async (event: any) => {
     selectedDTID = event;
 }
 
-const getTokenIDAccount = async (event: any) =>{
+const getTokenIDAccount = async (event: any) => {
     selectedTokenID = event;
     transferStatus.value = "";
 }
 
-const getFromAccount = async (event: any) =>{
+const getFromAccount = async (event: any) => {
     // fromAddress = event;
     transferStatus.value = "";
 }
@@ -138,59 +141,59 @@ const getMyBalance = async () => {
     console.log(accountBalance)
     console.log(balance)
     loading.value = false;
-    recordTransactions("Called my balance "+accountBalance.value)
+    recordTransactions("Called my balance " + accountBalance.value)
 }
 
 const getOwnTokens = async () => {
 
-//     const account = await getAddress(fromAddress);
-//     if (!account) {
-//         throw new Error('No Account')
-//     }
+    const account = await getAddress(fromAddress);
+    if (!account) {
+        throw new Error('No Account')
+    }
 
-//     if (collectionIDs.value.length <= 0) {
-//         throw new Error('No Collections Created')
-//     }
-//     const collectionId = collectionIDs.value[0]
+    if (collectionIDs.value.length <= 0) {
+        throw new Error('No Collections Created')
+    }
+    const collectionId = collectionIDs.value[0]
 
-//     const tokensResult: AccountTokensResult = await sdk.tokens.getAccountTokens({
-//   collectionId: collectionId,
-//   address: account.address,
-// });
+    const tokensResult: AccountTokensResult = await sdk.tokens.accountTokens({
+        collectionId: collectionId,
+        address: account.address,
+    });
 
-// const token = tokensResult.tokens[0];
-// console.log(tokensResult)
-// const { collectionId, tokenId } = token;
+    const token = tokensResult.tokens[0];
+    console.log(tokensResult)
+    const { collectionNumber, tokenId } = token;
 }
 
 const onDTFormSubmit = async () => {
     const fromAccount = await getAddress(fromAddress);
-    
-  if (!fromAccount) {
-    throw new Error('No accounts selected')
-  }
 
-  if (collectionIDs.value.length <= 0) {
+    if (!fromAccount) {
+        throw new Error('No accounts selected')
+    }
+
+    if (collectionIDs.value.length <= 0) {
         throw new Error('No Collections Created')
     }
     const collectionId = collectionIDs.value[0]
 
     const ret = await sdk.tokens.topmostOwner({
-    collectionId: collectionId,
-    tokenId: selectedDTID,
-  })
-  console.log(ret.topmostOwner)
+        collectionId: collectionId,
+        tokenId: selectedDTID,
+    })
+    console.log(ret.topmostOwner)
 
-  if (fromAccount.address != ret.topmostOwner){
-    transactionStatus.value = "DT inaccessible using this account";
-    recordTransactions("Account: "+fromAccount.address+" tried to do a transaction.")
-      throw new  Error('No Collections Created')
-  }
-  else{
-    transactionStatus.value = "Sucessfully submited";
-    recordTransactions("Account: "+fromAccount.address+" sucuessfuly did a transaction")
-  }
-  
+    if (fromAccount.address != ret.topmostOwner) {
+        transactionStatus.value = "DT inaccessible using this account";
+        recordTransactions("Account: " + fromAccount.address + " tried to do a transaction.")
+        throw new Error('No Collections Created')
+    }
+    else {
+        transactionStatus.value = "Sucessfully submited";
+        recordTransactions("Account: " + fromAccount.address + " sucuessfuly did a transaction")
+    }
+
 }
 
 const onFormSubmit = async () => {
@@ -242,49 +245,70 @@ const onFormSubmit = async () => {
     collectionIDs.value.push(collectionCreateResult.parsed?.collectionId)
     loading.value = false;
     console.log(collectionCreateResult.parsed)
-    collectionCreationStatus.value = "Collection Created "+ collectionCreateResult.parsed?.collectionId;
+    collectionCreationStatus.value = "Collection Created " + collectionCreateResult.parsed?.collectionId;
 }
 
-const dtTransferToAddress = async () =>{
+const dtTransferToAddress = async () => {
 
     console.log(getSelectedItem("selectDTTransferFromAdd"))
-    
+
     const fromAccount = await getAddress(getSelectedItem("selectDTTransferFromAdd"));
     const toAccount = await getAddress(getSelectedItem("selectDTTransferToAdd"));
-  if (!fromAccount || !toAccount) {
-    throw new Error('No accounts selected')
-  }
+    if (!fromAccount || !toAccount) {
+        throw new Error('No accounts selected')
+    }
 
-  if (collectionIDs.value.length <= 0) {
+    if (collectionIDs.value.length <= 0) {
         throw new Error('No Collections Created')
     }
     const collectionId = collectionIDs.value[0]
 
     const ret = await sdk.tokens.topmostOwner({
-    collectionId: collectionId,
-    tokenId: selectedTokenID,
-  })
-  console.log(ret.topmostOwner)
+        collectionId: collectionId,
+        tokenId: selectedTokenID,
+    })
+    console.log(ret.topmostOwner)
 
-  if (fromAccount.address != ret.topmostOwner){
-    transferStatus.value = "DT inaccessible using this account";
-      throw new  Error('No Collections Created')
-  }
-  transferStatus.value = "DT transfer on progress..."
-  const tokenTransferResult = await sdk.tokens.transfer.submitWaitResult({
-    address: fromAccount.address,
-    collectionId: collectionId,
-    tokenId: selectedTokenID,
-    to: toAccount.address
-  }, {
-    signer: fromAccount.uniqueSdkSigner
-  })
+    if (fromAccount.address != ret.topmostOwner) {
+        transferStatus.value = "DT inaccessible using this account";
+        throw new Error('No Collections Created')
+    }
+    transferStatus.value = "DT transfer on progress..."
+    const tokenTransferResult = await sdk.tokens.transfer.submitWaitResult({
+        address: fromAccount.address,
+        collectionId: collectionId,
+        tokenId: selectedTokenID,
+        to: toAccount.address
+    }, {
+        signer: fromAccount.uniqueSdkSigner
+    })
 
-  console.log(tokenTransferResult.parsed)
-  transferStatus.value = tokenTransferResult.parsed;
+    console.log(tokenTransferResult.parsed)
+    transferStatus.value = tokenTransferResult.parsed;
 }
 
+const uploadFileToIPFS = async () => {
+    const file = fs.readFileSync('../assets/car1.jpeg');
+
+    const { fullUrl, cid } = await sdk.ipfs.uploadFile({ file });
+
+    console.log(`Open by browser -> ${fullUrl}`);
+    console.log(`Or use CID if you need -> ${cid}`);
+}
+function getRndInteger(min: number, max: number) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
 const mintToken = async () => {
+    let imageArr: string[];
+
+    imageArr = [
+        "QmSy8hkdkSoiMnCo4tjGsCewg8Wenq4z7KtMwyaJKURw58",
+        "QmSgvVsKowbPRkWjBCbeLqyPAKyxNRT2hdTM3bKVJtA11R",
+        "QmTWdbsCtuSM39HJXditR3VUg27qUXtrQor1omokpzdtUa",
+        "QmPWdEpCY5uMqerUxMsPoXbUwRqdRSvr6zo3NY8ubtRDZr"];
+
+    let imgIndex = getRndInteger(0, 3);
+
     loading.value = true;
     const account = await getAddress(fromAddress);
     if (!account) {
@@ -301,7 +325,7 @@ const mintToken = async () => {
         collectionId,
         data: {
             image: {
-                ipfsCid: "QmPWdEpCY5uMqerUxMsPoXbUwRqdRSvr6zo3NY8ubtRDZr"
+                ipfsCid: imageArr[imgIndex]
             },
             encodedAttributes: {
                 0: 0
@@ -313,13 +337,28 @@ const mintToken = async () => {
     tokenIDs.value.push(tokenResult.parsed)
     loading.value = false;
     console.log(tokenResult.parsed)
-    mintTokenStatus.value = "Minted DT NFT: Collection= "+tokenResult.parsed?.collectionId+" NFT ID= "+ tokenResult.parsed?.tokenId;
-    for (var i=0; i < tokenIDs.value.length; i++){
+    mintTokenStatus.value = "Minted DT NFT: Collection= " + tokenResult.parsed?.collectionId + " NFT ID= " + tokenResult.parsed?.tokenId;
+    for (var i = 0; i < tokenIDs.value.length; i++) {
         console.log(tokenIDs.value[i].collectionId)
         console.log(tokenIDs.value[i].tokenId)
     }
-    
+    await getToken(tokenResult.parsed?.collectionId, tokenResult.parsed?.tokenId);
+
 }
+
+
+
+const getToken = async (collectionId: number, tokenId: number) => {
+    const token = await sdk.tokens.get({
+        collectionId,
+        tokenId,
+    })
+
+    tokenRef.value = token
+
+    console.log(token)
+}
+
 
 // export default defineComponent({
 //   data() {
@@ -367,7 +406,7 @@ const mintToken = async () => {
 
     <div style="border: 2px solid white;padding: 30px 30px;margin: 10px;">
         <h3>Select Account for interact with the system</h3>
-        <select @change="getAccount($event.target.value)">
+        <select @change="getMainAccount($event.target.value)">
             <option>--Select Address--</option>
             <option v-for="option in walletResult?.accounts" :key="option.address" :value="option.address">
                 {{ option.name }}
@@ -393,9 +432,22 @@ const mintToken = async () => {
         <h3>Mint Tokens</h3>
         <button @click="mintToken">Mint Token</button>
         <p> {{ mintTokenStatus }}</p>
+        <div v-if="tokenRef">
+            <img :src="tokenRef.image.fullUrl!" style="width: 100px;"><br />
+            <div>
+                {{ tokenRef.collection.tokenPrefix }} #{{ tokenRef.tokenId }}
+            </div>
+            <div>
+                owner: {{ tokenRef.owner }}
+            </div>
+            <div v-for="attr in tokenRef.attributes">
+                {{ attr.name?._ }}: {{ attr.value }}
+            </div>
+        </div>
     </div>
     <div style="border: 2px solid white;padding: 30px 30px;margin: 10px;">
         <h3>DT transactions</h3>
+        <!-- <button @click="getOwnTokens">Get Own Tokens</button> -->
         <select @change="getTokenIDSelectedDT($event.target.value)">
             <option>--Select DT--</option>
             <option v-for="option in tokenIDs" :key="option.tokenId" :value="option.tokenId">
@@ -415,7 +467,7 @@ const mintToken = async () => {
         <h3>DT transfer</h3>
         <!-- <button @click="getOwnTokens">Get Own Tokens</button> -->
         <select id="selectDTTransferTokenID" @change="getTokenIDAccount($event.target.value)">
-            <option>--Select Token--</option>
+            <option>--Select DT Token--</option>
             <option v-for="option in tokenIDs" :key="option.tokenId" :value="option.tokenId">
                 {{ option.tokenId }}
             </option>

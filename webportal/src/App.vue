@@ -4,6 +4,7 @@ import NFTManagement from './components/NFTManagement.vue';
 import Home from './components/Home.vue';
 import Edit from './components/CreateCollection.vue';
 import CourseGoals from './components/CourseGoals.vue';
+import NFTLoyalty from './components/NFTLoyalty.vue';
 
 </script>
 
@@ -22,6 +23,7 @@ import CourseGoals from './components/CourseGoals.vue';
   <!-- <Home /> -->
   <!-- <Edit/> -->
   <!-- <CourseGoals/> -->
+  <NFTLoyalty></NFTLoyalty>
 </template>
 
 <style scoped>
