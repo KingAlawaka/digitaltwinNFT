@@ -2,6 +2,7 @@
 import { onMounted, ref} from 'vue';
 import { Sdk, TokenByIdResponse, Options, IBalance } from "@unique-nft/sdk";
 import { IPolkadotExtensionAccount, Polkadot, IPolkadotExtensionLoadWalletsResult } from "@unique-nft/utils/extension"
+import { async } from '@firebase/util';
 
 const options: Options = {
     baseUrl: 'https://rest.unique.network/opal/v1'
@@ -17,6 +18,7 @@ let toAddress = ""
 const accountBalance = ref<IBalance | null>(null);
 const collectionNametxt = ref("");
 const collectionTokentxt = ref("");
+const collectionTaskstxt = ref("");
 const collectionIDs = ref([]);
 const tokenIDs = ref<Array>([]);
 let loading = ref<Boolean>(false);
@@ -117,7 +119,7 @@ const onCreateRFTCollectionFormSubmit = async () =>{
                 urlTemplate: "https://gateway.ipfs.io/ipfs/{infix}"
             },
             coverPicture: {
-                ipfsCid: "QmPWdEpCY5uMqerUxMsPoXbUwRqdRSvr6zo3NY8ubtRDZr"
+                ipfsCid: "QmYpPqYAeZHXy3zftJVSdKPqVqqXw1rgRHSdywi6NdWk4k"
             },
             attributesSchemaVersion: "1.0.0",
             attributesSchema: {
@@ -147,15 +149,15 @@ function getRndInteger(min: number, max: number) {
 }
 
 const mintRFTToken = async () => {
-    let imageArr: string[];
+//     let imageArr: string[];
 
-imageArr = [
-    "QmSy8hkdkSoiMnCo4tjGsCewg8Wenq4z7KtMwyaJKURw58",
-    "QmSgvVsKowbPRkWjBCbeLqyPAKyxNRT2hdTM3bKVJtA11R",
-    "QmTWdbsCtuSM39HJXditR3VUg27qUXtrQor1omokpzdtUa",
-    "QmPWdEpCY5uMqerUxMsPoXbUwRqdRSvr6zo3NY8ubtRDZr"];
+// imageArr = [
+//     "QmYpPqYAeZHXy3zftJVSdKPqVqqXw1rgRHSdywi6NdWk4k",
+//     "QmSgvVsKowbPRkWjBCbeLqyPAKyxNRT2hdTM3bKVJtA11R",
+//     "QmTWdbsCtuSM39HJXditR3VUg27qUXtrQor1omokpzdtUa",
+//     "QmPWdEpCY5uMqerUxMsPoXbUwRqdRSvr6zo3NY8ubtRDZr"];
 
-let imgIndex = getRndInteger(0, 3);
+// let imgIndex = getRndInteger(0, 3);
 
 loading.value = true;
 const account = await getAddress(fromAddress);
@@ -172,10 +174,10 @@ const tokenResult = await sdk.refungible.createToken.submitWaitResult({
 // const tokenResult = await sdk.tokens.create.submitWaitResult({
     address: account.address,
     collectionId,
-    amount: 3,
+    amount: parseInt(collectionTaskstxt.value),
     data: {
         image: {
-            ipfsCid: imageArr[imgIndex]
+            ipfsCid: "QmYpPqYAeZHXy3zftJVSdKPqVqqXw1rgRHSdywi6NdWk4k"
         },
         encodedAttributes: {
             0: 0
@@ -188,10 +190,10 @@ tokenIDs.value.push(tokenResult.parsed)
 loading.value = false;
 console.log(tokenResult.parsed)
 mintTokenStatus.value = "Minted DT NFT: Collection= " + tokenResult.parsed?.collectionId + " NFT ID= " + tokenResult.parsed?.tokenId;
-for (var i = 0; i < tokenIDs.value.length; i++) {
-    console.log(tokenIDs.value[i].collectionId)
-    console.log(tokenIDs.value[i].tokenId)
-}
+// for (var i = 0; i < tokenIDs.value.length; i++) {
+//     console.log(tokenIDs.value[i].collectionId)
+//     console.log(tokenIDs.value[i].tokenId)
+// }
 await getToken(tokenResult.parsed?.collectionId, tokenResult.parsed?.tokenId);
 
 }
@@ -283,12 +285,21 @@ const RTFBalanceCheck = async () => {
     RTFBalanceStatus.value = RTFAmount.amount;
 }
 
+const taskCompletion = async(e: number) =>{
+    console.log(e)
+    const input = document.getElementById('Task'+e) as HTMLInputElement;
+    input.setAttribute('disabled','');
+    await RFTTransferToAddress();
+
+}
+
 </script>
 <template>
-    <div style="border: 2px solid white;padding: 30px 30px;margin: 10px;">
+    <h3>Digital Twin NFT loyalty platform</h3>
+    <!-- <div style="border: 2px solid white;padding: 30px 30px;margin: 10px;">
         <h3>Account Balance</h3>
         <p>{{ accountBalance }}</p>
-    </div>
+    </div> -->
 
     <div style="border: 2px solid white;padding: 30px 30px;margin: 10px;">
         <h3>Select Account for interact with the system</h3>
@@ -304,18 +315,22 @@ const RTFBalanceCheck = async () => {
         <form @submit.prevent="onCreateRFTCollectionFormSubmit()" class="add-form">
             <div class="form-control">
                 <label>Name</label>
-                <input type="text" v-model="collectionNametxt" name="name" placeholder="Enter Your Name" />
+                <input type="text" v-model="collectionNametxt" name="name" placeholder="Collection Name" />
             </div>
             <div class="form-control">
                 <label>Token</label>
-                <input type="text" v-model="collectionTokentxt" name="token" placeholder="Enter Your Age" />
+                <input type="text" v-model="collectionTokentxt" name="token" placeholder="Token Prefix" />
             </div>
             <input type="submit" value="Create Collection" class="btn btn-block" />
         </form>
         <p> {{ RFTcollectionCreationStatus }}</p>
     </div>
     <div style="border: 2px solid white;padding: 30px 30px;margin: 10px;">
-        <h3>Mint Tokens</h3>
+        <h3>Mint RFT Tokens</h3>
+        <div class="form-control">
+                <label>Tasks #</label>
+                <input type="text" v-model="collectionTaskstxt" name="token" placeholder="Tasks" />
+        </div>
         <button @click="mintRFTToken">Mint Token</button>
         <p> {{ mintTokenStatus }}</p>
         <div v-if="tokenRef">
@@ -333,6 +348,21 @@ const RTFBalanceCheck = async () => {
     </div>
     <div style="border: 2px solid white;padding: 30px 30px;margin: 10px;">
         <h3>RFT transfer</h3>
+        <div>
+            <div>
+                <input type="checkbox" name="subscribe" id="Task1" @change="taskCompletion(1)"/>
+                <label>Task #1: Single journey 1000km </label>
+            </div>
+            <div>
+                <input type="checkbox" name="subscribe" id="Task2" @change="taskCompletion(2)"/>
+                <label>Task #2: Over 90kmph for 1 hour </label>
+            </div>
+            <div>
+                <input type="checkbox" name="subscribe" id="Task3" @change="taskCompletion(3)"/>
+                <label>Task #3: 5000km Service</label>
+            </div>
+            
+        </div>
         <select id="selectRFTTokenID" @change="getTokenIDAccount($event.target.value)">
             <option>--Select DT Token--</option>
             <option v-for="option in tokenIDs" :key="option.tokenId" :value="option.tokenId">
