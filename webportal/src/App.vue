@@ -18,7 +18,7 @@ import NFTLoyalty from './components/NFTLoyalty.vue';
     </a>
   </div> -->
   <!-- <HelloWorld /> -->
-  <NFTManagement />
+  <!-- <NFTManagement /> -->
   <!-- <router-view /> -->
   <!-- <Home /> -->
   <!-- <Edit/> -->

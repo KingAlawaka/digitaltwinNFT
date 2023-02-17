@@ -9,7 +9,9 @@ import { AccountTokensResult, CollectionAccess } from '@unique-nft/substrate-cli
 import GoalsList from "./GoalsList.vue";
 // import {fs} from 'fs';
 import TransactionList from "./TransactionList.vue";
+import NFTLoyalty from './NFTLoyalty.vue';
 import e from 'cors';
+import { defineEmits } from 'vue';
 
 const options: Options = {
     baseUrl: 'https://rest.unique.network/opal/v1'
@@ -23,6 +25,9 @@ const tokenRef = ref<TokenByIdResponse | null>(null)
 let toAddress = ""
 let fromAddress = ""
 let mainAddressSelected = ""
+let lastCreatedCollectionID = 0
+let lastMintedTokenID = 0
+let lastMintedAddress = ""
 const accountBalance = ref<IBalance | null>(null);
 const collectionNametxt = ref("");
 const collectionTokentxt = ref("");
@@ -33,16 +38,21 @@ const tokenIDs = ref<Array>([]);
 let loading = ref<Boolean>(false);
 let selectedCollectionID = 0;
 let dtTransferSelectedTokenID = 0;
-let transferStatus = ref("status");
-let transactionStatus = ref("status");
-let collectionCreationStatus = ref("status");
-let mintTokenStatus = ref("status");
+let transferStatus = ref("Status");
+let transactionStatus = ref("Status");
+let collectionCreationStatus = ref("Status");
+let mintTokenStatus = ref("Status");
 let dtFromAddress = ""
 let selectedDTID = 0;
 const goals = ref([]);
 const transactionsList = ref([]);
 let selectedCreatedCollectionID = -1;
 
+const emits = defineEmits(['sharedata'])
+
+function shareDataBetweenComponents(){
+    emits('sharedata',[lastMintedAddress,lastCreatedCollectionID,lastMintedTokenID])
+}
 
 // const options = ''
 
@@ -133,6 +143,7 @@ const getFromAccount = async (event: any) => {
 const getToAccount = async (event: any) => {
     toAddress = event;
     transferStatus.value = "";
+    console.log(event)
 }
 
 async function getAddress(a: string) {
@@ -227,7 +238,7 @@ const onDTTransactionFormSubmit = async () => {
     if (fromAccount.address != ret.topmostOwner) {
         transactionStatus.value = "DT inaccessible using this account";
         recordTransactions("Account: " + fromAccount.address + " tried to do a transaction.")
-        throw new Error('No Collections Created')
+        throw new Error('Transaction executed by external party')
     }
     else {
         transactionStatus.value = "Sucessfully submited";
@@ -435,11 +446,16 @@ const mintToken = async () => {
         loading.value = false;
         console.log(tokenResult.parsed)
         mintTokenStatus.value = "Minted DT NFT: Collection= " + tokenResult.parsed?.collectionId + " NFT ID= " + tokenResult.parsed?.tokenId;
+        lastCreatedCollectionID = tokenResult.parsed?.collectionId!;
+        lastMintedTokenID = tokenResult.parsed?.tokenId!
+        lastMintedAddress = mainAddressSelected;
         for (var i = 0; i < tokenIDs.value.length; i++) {
             console.log(tokenIDs.value[i].collectionId)
             console.log(tokenIDs.value[i].tokenId)
         }
         await getToken(tokenResult.parsed?.collectionId, tokenResult.parsed?.tokenId);
+        shareDataBetweenComponents()
+
     }
     else {
         mintTokenStatus.value = "DT NFT minting error... please try again"
@@ -527,8 +543,8 @@ console.log(result);
 
 </script>
 <template>
-<button @click="nestedToken">nested</button>
-<button @click="getBundle">Bundle</button>
+<!-- <button @click="greetMsg">Send To Loyalty</button> -->
+
     <!-- <h1>{{ loading }}</h1> -->
     <!-- <button @click="getAccounts">Accounts</button>
         <button @click="getMyBalance">Balance</button> -->
@@ -539,7 +555,7 @@ console.log(result);
 
     <div style="border: 2px solid white;padding: 30px 30px;margin: 10px;">
         <h3>Select Account for interact with the system</h3>
-        <select @change="getMainAccount($event.target.value)">
+        <select @change="getMainAccount($event.target.value)" class="select-custom">
             <option>--Select Address--</option>
             <option v-for="option in walletResult?.accounts" :key="option.address" :value="option.address">
                 {{ option.name }}
@@ -564,7 +580,7 @@ console.log(result);
     </div>
     <div style="border: 2px solid white;padding: 30px 30px;margin: 10px;">
         <h3>Mint Tokens</h3>
-        <select id="mintTokenCollectionSelect" @change="getSelectedCreatedCollectionID($event.target.value)">
+        <select id="mintTokenCollectionSelect" @change="getSelectedCreatedCollectionID($event.target.value)" class="select-custom">
             <option>--Select Collection--</option>
             <option v-for="ci in createCollectionIDs" :key="ci.cID" :value="ci.cID">
                 {{ ci.cName }}
@@ -588,13 +604,13 @@ console.log(result);
     <div style="border: 2px solid white;padding: 30px 30px;margin: 10px;">
         <h3>DT transactions</h3>
         <!-- <button @click="getOwnTokens">Get Own Tokens</button> -->
-        <select id="DTTransactionCollectionSelect" @change="getTokensByCollectionAndAddress($event.target.value)">
+        <select id="DTTransactionCollectionSelect" @change="getTokensByCollectionAndAddress($event.target.value)" class="select-custom">
             <option value="-1">--Select Collection--</option>
             <option v-for="ci in createCollectionIDs" :key="ci.cID" :value="ci.cID">
                 {{ ci.cName }}
             </option>
         </select>
-        <select id="DTTransactionTokenSelect" @change="getTokenIDSelectedDT($event.target.value)">
+        <select id="DTTransactionTokenSelect" @change="getTokenIDSelectedDT($event.target.value)" class="select-custom">
             <option value="-1">--Select DT--</option>
             <option v-for="option in tokenIDs" :key="option.tokenId" :value="option.tokenId">
                 {{ option.tokenId }}
@@ -612,30 +628,34 @@ console.log(result);
     <div style="border: 2px solid white;padding: 30px 30px;margin: 10px;">
         <h3>DT Transfer</h3>
         <!-- <button @click="getOwnTokens">Get Own Tokens</button> -->
-        <select id="DTTransferollectionSelect" @change="getTokensByCollectionAndAddress($event.target.value)">
+        <div>
+        <select id="DTTransferollectionSelect" @change="getTokensByCollectionAndAddress($event.target.value)" class="select-custom">
             <option value="-1">--Select Collection--</option>
             <option v-for="ci in createCollectionIDs" :key="ci.cID" :value="ci.cID">
                 {{ ci.cName }}
             </option>
         </select>
-        <select id="selectDTTransferTokenID" @change="getTokenIDAccount($event.target.value)">
+        <select id="selectDTTransferTokenID" @change="getTokenIDAccount($event.target.value)" class="select-custom">
             <option>--Select DT Token--</option>
             <option v-for="option in tokenIDs" :key="option.tokenId" :value="option.tokenId">
                 {{ option.tokenId }}
             </option>
         </select>
-        <select id="selectDTTransferFromAdd" @change="getFromAccount($event.target.value)">
+        <br/>
+        <select id="selectDTTransferFromAdd" @change="getFromAccount($event.target.value)" class="select-custom">
             <option>--Select From Address--</option>
             <option v-for="option in walletResult?.accounts" :key="option.address" :value="option.address">
                 {{ option.name }}
             </option>
         </select>
-        <select id="selectDTTransferToAdd" @change="getToAccount($event.target.value)">
+        <select id="selectDTTransferToAdd" @change="getToAccount($event.target.value)" class="select-custom">
             <option>--Select To Address--</option>
             <option v-for="option in walletResult?.accounts" :key="option.address" :value="option.address">
                 {{ option.name }}
             </option>
-        </select>
+        </select> 
+    </div>
+        <br/>
         <button @click="dtTransferToAddress">DT Transfer</button>
         <p> {{ transferStatus }}</p>
     </div>
@@ -643,20 +663,151 @@ console.log(result);
     <transaction-list :transactionsList=transactionsList></transaction-list>
 </template>
 <style>
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f4f4f4;
+}
+
+/* Style the header of the dashboard */
+header {
+  background-color: #336699;
+  color: #fff;
+  padding: 20px;
+}
+
+/* Style the main content area */
+main {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  margin: 20px;
+}
+
+/* Style the cards containing the dashboard data */
+.card {
+  background-color: #fff;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  margin: 10px;
+  padding: 20px;
+  width: 30%;
+}
+
+/* Style the headings in the cards */
+.card h2 {
+  font-size: 1.5rem;
+  margin-bottom: 10px;
+}
+
+/* Style the data in the cards */
+.card p {
+  font-size: 1.2rem;
+}
+
+/* Style the footer of the dashboard */
+footer {
+  background-color: #ccc;
+  color: #333;
+  padding: 20px;
+  text-align: center;
+}
+
+form-submit-button{
+    background-color: #336699;
+  border: none;
+  color: #fff;
+  padding: 10px 20px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  margin: 4px 2px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+/* Default button style */
+button {
+  background-color: #336699;
+  border: none;
+  color: #fff;
+  padding: 10px 20px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  margin: 4px 2px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+/* Hover effect for buttons */
+button:hover {
+  background-color: #214266;
+}
+
+/* Active effect for buttons */
+button:active {
+  background-color: #3e4d66;
+}
+
+/* Default input text style */
+input[type="text"] {
+  padding: 10px;
+  border-radius: 4px;
+  border: none;
+  background-color: #1A1A1A;
+  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+  font-size: 16px;
+  width: 30%;
+  margin-bottom: 10px;
+  margin-right: 5px;
+}
+
+/* Focus effect for input text */
+input[type="text"]:focus {
+  outline: none;
+  box-shadow: 0px 2px 5px rgba(51, 153, 255, 0.5);
+}
+
+/* Default select box style */
+select {
+  padding: 10px;
+  border-radius: 4px;
+  border: none;
+  background-color: #1A1A1A;
+  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+  font-size: 16px;
+  width: 30%;
+  margin-bottom: 10px;
+  margin-right: 10px;
+}
+
+/* Focus effect for select box */
+select:focus {
+  outline: none;
+  box-shadow: 0px 2px 5px rgba(51, 153, 255, 0.5);
+}
+	
 .btn-custom {
-    border-radius: 8px;
-    border: 1px solid transparent;
-    padding: 0.6em 1.2em;
-    font-size: 1em;
-    font-weight: 500;
-    font-family: inherit;
-    background-color: #1a1a1a;
-    cursor: pointer;
-    transition: border-color 0.25s;
-    margin: 8px;
+    background-color: #336699;
+  border: none;
+  color: #fff;
+  padding: 10px 20px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  margin: 4px 2px;
+  cursor: pointer;
+  border-radius: 4px;
 }
 
 .lbl-custom {
     margin: 5px;
+}
+
+.select-custom{
+    padding: 10px;
 }
 </style>
