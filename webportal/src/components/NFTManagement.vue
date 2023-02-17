@@ -3,14 +3,8 @@ import Vue from 'vue';
 import { onMounted, ref, defineComponent } from 'vue';
 import { Sdk, TokenByIdResponse, Options, IBalance } from "@unique-nft/sdk";
 import { IPolkadotExtensionAccount, Polkadot, IPolkadotExtensionLoadWalletsResult } from "@unique-nft/utils/extension"
-import { async } from '@firebase/util';
-// import { AccountTokensResult } from '@unique-nft/substrate-client/tokens';
 import { AccountTokensResult, CollectionAccess } from '@unique-nft/substrate-client/tokens';
-import GoalsList from "./GoalsList.vue";
-// import {fs} from 'fs';
 import TransactionList from "./TransactionList.vue";
-import NFTLoyalty from './NFTLoyalty.vue';
-import e from 'cors';
 import { defineEmits } from 'vue';
 
 const options: Options = {
@@ -50,35 +44,21 @@ let selectedCreatedCollectionID = -1;
 
 const emits = defineEmits(['sharedata'])
 
-function shareDataBetweenComponents(){
-    emits('sharedata',[lastMintedAddress,lastCreatedCollectionID,lastMintedTokenID])
+function shareDataBetweenComponents() {
+    emits('sharedata', [lastMintedAddress, lastCreatedCollectionID, lastMintedTokenID])
 }
-
-// const options = ''
 
 onMounted(async () => {
     console.log("Webporatal Loading")
-    // loading.value = true;
     const results = await Polkadot.enableAndLoadAllWallets()
-    // accountRef.value = results.accounts[0]
-    // console.log(accountRef.value)
     walletResult.value = results
-    // loading.value = false;
-    // var e = (document.getElementById("selectDTTransferTokenID")) as HTMLSelectElement;
-    // var sel = e.selectedIndex;
-    // var opt = e.options[sel];
-    // console.log((<HTMLSelectElement>opt).value);
-
 })
 
 const getMainAccount = async (event: any) => {
     mainAddressSelected = event
-    // console.log(event)
     console.log(mainAddressSelected)
     getMyBalance()
-    // loading.value = false;
     recordTransactions("Selected Account " + event)
-    // getOwnTokens()
 }
 
 const getMyBalance = async () => {
@@ -92,8 +72,6 @@ const getMyBalance = async () => {
     })
     accountBalance.value = balance.availableBalance.amount
     console.log(accountBalance)
-    // console.log(balance)
-    // loading.value = false;
     recordTransactions("Called my balance " + accountBalance.value)
 }
 
@@ -205,11 +183,6 @@ const getTokensByCollectionAndAddress = async (event: any) => {
             console.log(tokenResult.tokens[i])
             tokenIDs.value.push(tokenResult.tokens[i])
         }
-        // tokenIDs.value.push(tokenResult.parsed)
-        // console.log(tokenResult.parsed)
-        // const token = tokensResult.tokens[0];
-        // console.log(tokensResult)
-        // const { collectionNumber, tokenId } = token;
     }
     console.log(tokenIDs.value)
 }
@@ -227,7 +200,6 @@ const onDTTransactionFormSubmit = async () => {
     if (createCollectionIDs.value.length <= 0) {
         throw new Error('No Collections Created')
     }
-    // const collectionId = collectionIDs.value[0]
 
     const ret = await sdk.tokens.topmostOwner({
         collectionId: colID,
@@ -248,17 +220,6 @@ const onDTTransactionFormSubmit = async () => {
 }
 
 const onCreateCollectionFormSubmit = async () => {
-    // loading.value = true;
-    // console.log(collectionNametxt.value)
-    // const enablingResult = await Polkadot.enableAndLoadAllWallets()
-    // let accountIndex = 0;
-    // for (var i=0; i<enablingResult.accounts.length;i++){
-    //     if (fromAddress == enablingResult.accounts[i].address){
-    //         console.log(i)
-    //         accountIndex=i;
-    //     }
-    // }
-    // const account = enablingResult.accounts[accountIndex];
     const account = await getAddress(mainAddressSelected);
     if (!account) {
         collectionCreationStatus.value = "New Collection Creating error...Please select an account... ";
@@ -310,9 +271,9 @@ const onCreateCollectionFormSubmit = async () => {
             cID: collectionCreateResult.parsed?.collectionId,
             cName: collectionNametxt.value
         }
-        // collectionIDs.value.push(collectionCreateResult.parsed?.collectionId)
+
         createCollectionIDs.value.push(tempCollection);
-        // loading.value = false;
+
         collectionNametxt.value = ""
         collectionTokentxt.value = ""
         console.log(collectionCreateResult.parsed)
@@ -345,11 +306,9 @@ const onCreateCollectionFormSubmit = async () => {
 
         collectionCreationStatus.value = "Collection Created " + collectionCreateResult.parsed?.collectionId;
     }
-    // console.log(account.address)
 }
 
 const getSelectedCreatedCollectionID = async (event: any) => {
-    // console.log(event)
     selectedCreatedCollectionID = event;
 }
 
@@ -407,7 +366,6 @@ function getRndInteger(min: number, max: number) {
 }
 
 const mintToken = async () => {
-    // const colID = parseInt(getSelectedItem("mintTokenCollectionSelect"));
     let imageArr: string[];
 
     imageArr = [
@@ -418,7 +376,6 @@ const mintToken = async () => {
 
     let imgIndex = getRndInteger(0, 3);
 
-    // loading.value = true;
     const account = await getAddress(mainAddressSelected);
     if (!account) {
         throw new Error('No account')
@@ -429,7 +386,6 @@ const mintToken = async () => {
         mintTokenStatus.value = "DT NFT minting..."
         const tokenResult = await sdk.tokens.create.submitWaitResult({
             address: account.address,
-            // collectionId:colID,
             collectionId: selectedCreatedCollectionID,
             data: {
                 image: {
@@ -442,7 +398,6 @@ const mintToken = async () => {
         }, {
             signer: account.uniqueSdkSigner
         })
-        // tokenIDs.value.push(tokenResult.parsed)
         loading.value = false;
         console.log(tokenResult.parsed)
         mintTokenStatus.value = "Minted DT NFT: Collection= " + tokenResult.parsed?.collectionId + " NFT ID= " + tokenResult.parsed?.tokenId;
@@ -460,9 +415,6 @@ const mintToken = async () => {
     else {
         mintTokenStatus.value = "DT NFT minting error... please try again"
     }
-    // const collectionId = collectionIDs.value[0]
-
-
 }
 
 
@@ -479,75 +431,36 @@ const getToken = async (collectionId: number, tokenId: number) => {
 }
 
 
-// export default defineComponent({
-//   data() {
-//     return {
-//       selectedValue: ''
-//     };
-//   },
-//   methods: {
-//     changeHandler(event: any) {
-//       this.selectedValue = event.target.value;
-//       this.callTypeScriptFunction(this.selectedValue);
-//     },
-//     callTypeScriptFunction(value: string) {
-//       console.log('Selected value:', value);
-//     }
-//   }
-// });
-
-// export default Vue.extend({
-//   data() {
-//     return {
-//       selectedValue: ''
-//     };
-//   },
-//   methods: {
-//     changeHandler(event: any) {
-//       this.selectedValue = event.target.value;
-//       this.callTypeScriptFunction(this.selectedValue);
-//     },
-//     callTypeScriptFunction(value: string) {
-//       console.log('Selected value:', value);
-//     }
-//   }
-// });
-
-const nestedToken = async() => {
+const nestedToken = async () => {
     const account = await getAddress("5GHG4w2AE95WBFvZh36wjEaiyt1gfYk97k5wWSkEDqeKVaj6");
-    // accountRef.value = results.accounts[0]
+
     const result = await sdk.tokens.nest.submitWaitResult({
         address: account.address,
         parent: {
-            collectionId:529,
+            collectionId: 529,
             tokenId: 2,
         },
-        nested:{
+        nested: {
             collectionId: 532,
             tokenId: 1,
         },
-    },{
+    }, {
         signer: account.uniqueSdkSigner
     });
     console.log(result.parsed);
 }
 
-const getBundle = async() => {
+const getBundle = async () => {
     const result = await sdk.tokens.getBundle({
-  collectionId: 529,
-  tokenId: 2,
-});
+        collectionId: 529,
+        tokenId: 2,
+    });
 
-console.log(result);
+    console.log(result);
 }
 
 </script>
 <template>
-<!-- <button @click="greetMsg">Send To Loyalty</button> -->
-
-    <!-- <h1>{{ loading }}</h1> -->
-    <!-- <button @click="getAccounts">Accounts</button>
-        <button @click="getMyBalance">Balance</button> -->
     <div style="border: 2px solid white;padding: 30px 30px;margin: 10px;">
         <h3>Account Balance</h3>
         <p>{{ accountBalance }}</p>
@@ -575,12 +488,12 @@ console.log(result);
             </div>
             <input type="submit" value="Create Collection" class="btn-custom" />
         </form>
-        <!-- <button @click="addToAllowList">Allow Minting</button> -->
         <p> {{ collectionCreationStatus }}</p>
     </div>
     <div style="border: 2px solid white;padding: 30px 30px;margin: 10px;">
         <h3>Mint Tokens</h3>
-        <select id="mintTokenCollectionSelect" @change="getSelectedCreatedCollectionID($event.target.value)" class="select-custom">
+        <select id="mintTokenCollectionSelect" @change="getSelectedCreatedCollectionID($event.target.value)"
+            class="select-custom">
             <option>--Select Collection--</option>
             <option v-for="ci in createCollectionIDs" :key="ci.cID" :value="ci.cID">
                 {{ ci.cName }}
@@ -603,8 +516,8 @@ console.log(result);
     </div>
     <div style="border: 2px solid white;padding: 30px 30px;margin: 10px;">
         <h3>DT transactions</h3>
-        <!-- <button @click="getOwnTokens">Get Own Tokens</button> -->
-        <select id="DTTransactionCollectionSelect" @change="getTokensByCollectionAndAddress($event.target.value)" class="select-custom">
+        <select id="DTTransactionCollectionSelect" @change="getTokensByCollectionAndAddress($event.target.value)"
+            class="select-custom">
             <option value="-1">--Select Collection--</option>
             <option v-for="ci in createCollectionIDs" :key="ci.cID" :value="ci.cID">
                 {{ ci.cName }}
@@ -627,187 +540,188 @@ console.log(result);
     </div>
     <div style="border: 2px solid white;padding: 30px 30px;margin: 10px;">
         <h3>DT Transfer</h3>
-        <!-- <button @click="getOwnTokens">Get Own Tokens</button> -->
         <div>
-        <select id="DTTransferollectionSelect" @change="getTokensByCollectionAndAddress($event.target.value)" class="select-custom">
-            <option value="-1">--Select Collection--</option>
-            <option v-for="ci in createCollectionIDs" :key="ci.cID" :value="ci.cID">
-                {{ ci.cName }}
-            </option>
-        </select>
-        <select id="selectDTTransferTokenID" @change="getTokenIDAccount($event.target.value)" class="select-custom">
-            <option>--Select DT Token--</option>
-            <option v-for="option in tokenIDs" :key="option.tokenId" :value="option.tokenId">
-                {{ option.tokenId }}
-            </option>
-        </select>
-        <br/>
-        <select id="selectDTTransferFromAdd" @change="getFromAccount($event.target.value)" class="select-custom">
-            <option>--Select From Address--</option>
-            <option v-for="option in walletResult?.accounts" :key="option.address" :value="option.address">
-                {{ option.name }}
-            </option>
-        </select>
-        <select id="selectDTTransferToAdd" @change="getToAccount($event.target.value)" class="select-custom">
-            <option>--Select To Address--</option>
-            <option v-for="option in walletResult?.accounts" :key="option.address" :value="option.address">
-                {{ option.name }}
-            </option>
-        </select> 
-    </div>
-        <br/>
+            <select id="DTTransferollectionSelect" @change="getTokensByCollectionAndAddress($event.target.value)"
+                class="select-custom">
+                <option value="-1">--Select Collection--</option>
+                <option v-for="ci in createCollectionIDs" :key="ci.cID" :value="ci.cID">
+                    {{ ci.cName }}
+                </option>
+            </select>
+            <select id="selectDTTransferTokenID" @change="getTokenIDAccount($event.target.value)" class="select-custom">
+                <option>--Select DT Token--</option>
+                <option v-for="option in tokenIDs" :key="option.tokenId" :value="option.tokenId">
+                    {{ option.tokenId }}
+                </option>
+            </select>
+            <br />
+            <select id="selectDTTransferFromAdd" @change="getFromAccount($event.target.value)" class="select-custom">
+                <option>--Select From Address--</option>
+                <option v-for="option in walletResult?.accounts" :key="option.address" :value="option.address">
+                    {{ option.name }}
+                </option>
+            </select>
+            <select id="selectDTTransferToAdd" @change="getToAccount($event.target.value)" class="select-custom">
+                <option>--Select To Address--</option>
+                <option v-for="option in walletResult?.accounts" :key="option.address" :value="option.address">
+                    {{ option.name }}
+                </option>
+            </select>
+        </div>
+        <br />
         <button @click="dtTransferToAddress">DT Transfer</button>
         <p> {{ transferStatus }}</p>
     </div>
-    <!-- <goals-list :goals=goals></goals-list> -->
     <transaction-list :transactionsList=transactionsList></transaction-list>
 </template>
 <style>
 body {
-  font-family: Arial, sans-serif;
-  background-color: #f4f4f4;
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
 }
 
 /* Style the header of the dashboard */
 header {
-  background-color: #336699;
-  color: #fff;
-  padding: 20px;
+    background-color: #336699;
+    color: #fff;
+    padding: 20px;
 }
 
 /* Style the main content area */
 main {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  margin: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    margin: 20px;
 }
 
 /* Style the cards containing the dashboard data */
 .card {
-  background-color: #fff;
-  border-radius: 5px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  margin: 10px;
-  padding: 20px;
-  width: 30%;
+    background-color: #fff;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    margin: 10px;
+    padding: 20px;
+    width: 30%;
 }
 
 /* Style the headings in the cards */
 .card h2 {
-  font-size: 1.5rem;
-  margin-bottom: 10px;
+    font-size: 1.5rem;
+    margin-bottom: 10px;
 }
 
 /* Style the data in the cards */
 .card p {
-  font-size: 1.2rem;
+    font-size: 1.2rem;
 }
 
 /* Style the footer of the dashboard */
 footer {
-  background-color: #ccc;
-  color: #333;
-  padding: 20px;
-  text-align: center;
+    background-color: #ccc;
+    color: #333;
+    padding: 20px;
+    text-align: center;
 }
 
-form-submit-button{
+form-submit-button {
     background-color: #336699;
-  border: none;
-  color: #fff;
-  padding: 10px 20px;
-  text-align: center;
-  text-decoration: none;
-  display: inline-block;
-  font-size: 16px;
-  margin: 4px 2px;
-  cursor: pointer;
-  border-radius: 4px;
+    border: none;
+    color: #fff;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    cursor: pointer;
+    border-radius: 4px;
 }
 
 /* Default button style */
 button {
-  background-color: #336699;
-  border: none;
-  color: #fff;
-  padding: 10px 20px;
-  text-align: center;
-  text-decoration: none;
-  display: inline-block;
-  font-size: 16px;
-  margin: 4px 2px;
-  cursor: pointer;
-  border-radius: 4px;
+    background-color: #336699;
+    border: none;
+    color: #fff;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    cursor: pointer;
+    border-radius: 4px;
 }
 
 /* Hover effect for buttons */
 button:hover {
-  background-color: #214266;
+    background-color: #214266;
 }
 
 /* Active effect for buttons */
 button:active {
-  background-color: #3e4d66;
+    background-color: #3e4d66;
 }
 
 /* Default input text style */
 input[type="text"] {
-  padding: 10px;
-  border-radius: 4px;
-  border: none;
-  background-color: #1A1A1A;
-  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
-  font-size: 16px;
-  width: 30%;
-  margin-bottom: 10px;
-  margin-right: 5px;
+    padding: 10px;
+    border-radius: 4px;
+    border: none;
+    background-color: #1A1A1A;
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+    font-size: 16px;
+    width: 30%;
+    margin-bottom: 10px;
+    margin-right: 5px;
+    color: #f4f4f4;
 }
 
 /* Focus effect for input text */
 input[type="text"]:focus {
-  outline: none;
-  box-shadow: 0px 2px 5px rgba(51, 153, 255, 0.5);
+    outline: none;
+    box-shadow: 0px 2px 5px rgba(51, 153, 255, 0.5);
 }
 
 /* Default select box style */
 select {
-  padding: 10px;
-  border-radius: 4px;
-  border: none;
-  background-color: #1A1A1A;
-  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
-  font-size: 16px;
-  width: 30%;
-  margin-bottom: 10px;
-  margin-right: 10px;
+    padding: 10px;
+    border-radius: 4px;
+    border: none;
+    background-color: #1A1A1A;
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+    font-size: 16px;
+    width: 30%;
+    margin-bottom: 10px;
+    margin-right: 10px;
+    color: #f4f4f4;
 }
 
 /* Focus effect for select box */
 select:focus {
-  outline: none;
-  box-shadow: 0px 2px 5px rgba(51, 153, 255, 0.5);
+    outline: none;
+    box-shadow: 0px 2px 5px rgba(51, 153, 255, 0.5);
 }
-	
+
 .btn-custom {
     background-color: #336699;
-  border: none;
-  color: #fff;
-  padding: 10px 20px;
-  text-align: center;
-  text-decoration: none;
-  display: inline-block;
-  font-size: 16px;
-  margin: 4px 2px;
-  cursor: pointer;
-  border-radius: 4px;
+    border: none;
+    color: #fff;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    cursor: pointer;
+    border-radius: 4px;
 }
 
 .lbl-custom {
     margin: 5px;
 }
 
-.select-custom{
+.select-custom {
     padding: 10px;
 }
 </style>

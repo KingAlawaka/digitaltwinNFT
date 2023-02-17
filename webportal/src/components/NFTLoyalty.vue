@@ -2,7 +2,6 @@
 import { onMounted, ref } from 'vue';
 import { Sdk, TokenByIdResponse, Options, IBalance, GetBundleResponse } from "@unique-nft/sdk";
 import { IPolkadotExtensionAccount, Polkadot, IPolkadotExtensionLoadWalletsResult } from "@unique-nft/utils/extension"
-import { async } from '@firebase/util';
 import NFTManagement from './NFTManagement.vue';
 
 const options: Options = {
@@ -39,7 +38,6 @@ let mainAddressSelected = ""
 const goals = ref([]);
 
 function catchEmit(values: any) {
-    // lastMintedAddress,lastCreatedCollectionID,lastMintedTokenID
     lastCreatedCollectionID = values[1];
     lastMintedAddress = values[0];
     lastMintedTokenID = values[2];
@@ -49,7 +47,7 @@ function catchEmit(values: any) {
 }
 
 onMounted(async () => {
-    console.log("Wada")
+    console.log("Initilization")
     loading.value = true;
     const results = await Polkadot.enableAndLoadAllWallets()
     accountRef.value = results.accounts[0]
@@ -67,7 +65,6 @@ const getAccount = async (event: any) => {
     loading.value = false;
     mainAddressSelected = event
     recordTransactions("Selected Account " + event)
-    // getOwnTokens()
 }
 
 function recordTransactions(msg: any) {
@@ -113,20 +110,11 @@ async function getAddress(a: string) {
 const onCreateRFTCollectionFormSubmit = async () => {
     loading.value = true;
     console.log(collectionNametxt.value)
-    // const enablingResult = await Polkadot.enableAndLoadAllWallets()
-    // let accountIndex = 0;
-    // for (var i=0; i<enablingResult.accounts.length;i++){
-    //     if (fromAddress == enablingResult.accounts[i].address){
-    //         console.log(i)
-    //         accountIndex=i;
-    //     }
-    // }
-    // const account = enablingResult.accounts[accountIndex];
+
     const account = await getAddress(fromAddress);
     console.log(account.address)
     RFTcollectionCreationStatus.value = "New RFT Collection Creating... ";
     const collectionCreateResult = await sdk.refungible.createCollection.submitWaitResult({
-        // const collectionCreateResult = await sdk.collections.creation.submitWaitResult({
         address: account.address,
         name: collectionNametxt.value,
         description: "DT RFT collection",
@@ -168,16 +156,6 @@ function getRndInteger(min: number, max: number) {
 }
 
 const mintRFTToken = async () => {
-    //     let imageArr: string[];
-
-    // imageArr = [
-    //     "QmYpPqYAeZHXy3zftJVSdKPqVqqXw1rgRHSdywi6NdWk4k",
-    //     "QmSgvVsKowbPRkWjBCbeLqyPAKyxNRT2hdTM3bKVJtA11R",
-    //     "QmTWdbsCtuSM39HJXditR3VUg27qUXtrQor1omokpzdtUa",
-    //     "QmPWdEpCY5uMqerUxMsPoXbUwRqdRSvr6zo3NY8ubtRDZr"];
-
-    // let imgIndex = getRndInteger(0, 3);
-
     loading.value = true;
     const account = await getAddress(fromAddress);
     if (!account) {
@@ -192,7 +170,6 @@ const mintRFTToken = async () => {
     const collectionId = collectionIDs.value[0]
     mintTokenStatus.value = "DT NFT minting..."
     const tokenResult = await sdk.refungible.createToken.submitWaitResult({
-        // const tokenResult = await sdk.tokens.create.submitWaitResult({
         address: account.address,
         collectionId,
         amount: parseInt(collectionTaskstxt.value),
@@ -211,10 +188,7 @@ const mintRFTToken = async () => {
     loading.value = false;
     console.log(tokenResult.parsed)
     mintTokenStatus.value = "Minted DT NFT: Collection= " + tokenResult.parsed?.collectionId + " NFT ID= " + tokenResult.parsed?.tokenId;
-    // for (var i = 0; i < tokenIDs.value.length; i++) {
-    //     console.log(tokenIDs.value[i].collectionId)
-    //     console.log(tokenIDs.value[i].tokenId)
-    // }
+
     await getToken(tokenResult.parsed?.collectionId, tokenResult.parsed?.tokenId);
     lastCreatedRFTCollectionID = tokenResult.parsed?.collectionId!;
     lastMintedRFTTokenID = tokenResult.parsed?.tokenId!;
@@ -298,7 +272,7 @@ const RFTTransferToAddress = async () => {
         tokenId: 1
     });
     if (RTFAmount.amount == RTFTotalAmount) {
-        RTFtransferStatus.value = "You got a discout for next service";
+        RTFtransferStatus.value = "You got a discout for the next service";
     }
 
 
@@ -332,7 +306,7 @@ const taskCompletion = async (e: number) => {
     }
     await RTFBalanceCheck();
     const currentBalance = parseInt(RTFBalanceStatus.value);
-    
+
     if (tokenId > 0 && fromAccount && toAccount && currentBalance > 0) {
         console.log(e)
         const input = document.getElementById('Task' + e) as HTMLInputElement;
@@ -343,7 +317,7 @@ const taskCompletion = async (e: number) => {
     else if (currentBalance <= 0) {
         RTFtransferStatus.value = "Insufficient token balance, Please select the correct account";
         throw new Error('Insufficient token balance, Please change the account')
-    } 
+    }
     else {
         RTFtransferStatus.value = "Please select token, from and to accounts";
     }
@@ -353,7 +327,6 @@ const taskCompletion = async (e: number) => {
 
 const nestedToken = async () => {
     const account = await getAddress(mainAddressSelected);
-    // accountRef.value = results.accounts[0]
     RTFBalanceStatus.value = "Token Nesting started";
     const result = await sdk.tokens.nest.submitWaitResult({
         address: account.address,
@@ -369,7 +342,7 @@ const nestedToken = async () => {
         signer: account.uniqueSdkSigner
     });
     console.log(result.parsed);
-    if (!result){
+    if (!result) {
         RTFBalanceStatus.value = "Please change the account for nesting"
     }
     RTFBalanceStatus.value = result.parsed;
@@ -390,10 +363,7 @@ const getBundle = async () => {
     <h3>Digital Twin NFT</h3>
     <NFTManagement @sharedata="catchEmit" />
     <h3>Digital Twin NFT loyalty platform</h3>
-    <!-- <div style="border: 2px solid white;padding: 30px 30px;margin: 10px;">
-        <h3>Account Balance</h3>
-        <p>{{ accountBalance }}</p>
-    </div> -->
+
 
     <div style="border: 2px solid white;padding: 30px 30px;margin: 10px;">
         <h3>Select Account for interact with the system</h3>
@@ -513,7 +483,7 @@ const getBundle = async () => {
     margin: 5px;
 }
 
-.select-custom{
+.select-custom {
     padding: 10px;
 }
 </style>
