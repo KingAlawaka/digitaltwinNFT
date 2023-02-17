@@ -263,7 +263,7 @@ const RFTTransferToAddress = async () => {
         throw new Error('Insufficient token balance...Please change the amount')
     }
 
-    RTFtransferStatus.value = "DT transfer on progress..."
+    RTFtransferStatus.value = "RFT transfer on progress..."
     const tokenTransferResult = await sdk.refungible.transferToken.submitWaitResult({
         address: fromAccount.address,
         collectionId: collectionId,
@@ -481,8 +481,8 @@ const getBundle = async () => {
             <label class="lbl-custom">RFT Amount #</label>
             <input type="text" v-model="RFTTransferAmounttxt" name="amount" placeholder="RFT Amount" />
         </div>
-        <p>Check boxes will initiate RTF transfers, For manual operation use the "DT Transer"</p>
-        <button @click="RFTTransferToAddress">DT Transfer</button>
+        <p>Check boxes will initiate RTF transfers, For manual operation use the "RFT Transfer"</p>
+        <button @click="RFTTransferToAddress">RFT Transfer</button>
         <p> {{ RTFtransferStatus }}</p>
     </div>
     <div style="border: 2px solid white;padding: 30px 30px;margin: 10px;">
