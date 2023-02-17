@@ -20,6 +20,7 @@ const accountBalance = ref<IBalance | null>(null);
 const collectionNametxt = ref("");
 const collectionTokentxt = ref("");
 const collectionTaskstxt = ref("");
+const RFTTransferAmounttxt = ref("1");
 const collectionIDs = ref([]);
 const tokenIDs = ref<Array>([]);
 let loading = ref<Boolean>(false);
@@ -28,13 +29,14 @@ let RTFtransferStatus = ref("Status");
 let RFTcollectionCreationStatus = ref("Status");
 let RTFBalanceStatus = ref("Status");
 let mintTokenStatus = ref("Status");
-let RTFTotalAmount = 3;
+let RTFTotalAmount = 0;
 let lastCreatedCollectionID = 0
 let lastMintedAddress = ""
 let lastMintedTokenID = 0
 let lastCreatedRFTCollectionID = 0
 let lastMintedRFTTokenID = 0
 let mainAddressSelected = ""
+let RFTCurrentBalance = 0;
 const goals = ref([]);
 
 function catchEmit(values: any) {
@@ -188,7 +190,7 @@ const mintRFTToken = async () => {
     loading.value = false;
     console.log(tokenResult.parsed)
     mintTokenStatus.value = "Minted DT NFT: Collection= " + tokenResult.parsed?.collectionId + " NFT ID= " + tokenResult.parsed?.tokenId;
-
+    RTFTotalAmount = parseInt(collectionTaskstxt.value);
     await getToken(tokenResult.parsed?.collectionId, tokenResult.parsed?.tokenId);
     lastCreatedRFTCollectionID = tokenResult.parsed?.collectionId!;
     lastMintedRFTTokenID = tokenResult.parsed?.tokenId!;
@@ -221,6 +223,7 @@ const getTokenIDAccount = async (event: any) => {
 const getFromAccount = async (event: any) => {
     // fromAddress = event;
     RTFtransferStatus.value = "";
+    await RTFBalanceCheck();
 }
 
 const getToAccount = async (event: any) => {
@@ -243,39 +246,54 @@ const RFTTransferToAddress = async () => {
     }
 
     await RTFBalanceCheck();
-    const currentBalance = parseInt(RTFBalanceStatus.value);
+    const currentBalance = RFTCurrentBalance;
     if (currentBalance <= 0) {
         RTFtransferStatus.value = "Insufficient token balance, Please change the account";
         throw new Error('Insufficient token balance, Please change the account')
     }
     const collectionId = collectionIDs.value[0]
+    let transferAmount = 1;
+    if (parseInt(RFTTransferAmounttxt.value) > 0){
+        transferAmount = parseInt(RFTTransferAmounttxt.value);
+    }
     RTFtransferStatus.value = "DT transfer on progress..."
     const tokenTransferResult = await sdk.refungible.transferToken.submitWaitResult({
         address: fromAccount.address,
         collectionId: collectionId,
         tokenId: selectedTokenID,
         to: toAccount.address,
-        amount: 1,
+        amount: transferAmount,
     }, {
         signer: fromAccount.uniqueSdkSigner
     })
 
     console.log(tokenTransferResult.parsed)
     RTFtransferStatus.value = tokenTransferResult.parsed;
-
-
-
-
     const RTFAmount = await sdk.refungible.getBalance({
         address: toAccount.address,
         collectionId: collectionId,
         tokenId: 1
     });
+    RTFtransferStatus.value = "You got " + RTFAmount.amount +"/"+RTFTotalAmount;
+    RTFBalanceStatus.value = "Current balance " + (RTFTotalAmount - RTFAmount.amount) +"/"+RTFTotalAmount;
     if (RTFAmount.amount == RTFTotalAmount) {
         RTFtransferStatus.value = "You got a discout for the next service";
     }
 
 
+}
+
+const RTFCheckBalanceMainAccount = async () => {
+    const fromAccount = await getAddress(mainAddressSelected);
+    const collectionId = collectionIDs.value[0];
+
+    const RTFAmount = await sdk.refungible.getBalance({
+        address: fromAccount.address,
+        collectionId: collectionId,
+        tokenId: 1
+    });
+    RFTCurrentBalance = RTFAmount.amount;
+    RTFBalanceStatus.value = "Current balance " + RTFAmount.amount +"/"+RTFTotalAmount;
 }
 
 const RTFBalanceCheck = async () => {
@@ -287,7 +305,8 @@ const RTFBalanceCheck = async () => {
         collectionId: collectionId,
         tokenId: 1
     });
-    RTFBalanceStatus.value = RTFAmount.amount;
+    RFTCurrentBalance = RTFAmount.amount;
+    RTFBalanceStatus.value = "Current balance " + RTFAmount.amount +"/"+RTFTotalAmount;
 }
 
 const taskCompletion = async (e: number) => {
@@ -305,7 +324,7 @@ const taskCompletion = async (e: number) => {
         throw new Error('No Collections Created')
     }
     await RTFBalanceCheck();
-    const currentBalance = parseInt(RTFBalanceStatus.value);
+    const currentBalance = RFTCurrentBalance;
 
     if (tokenId > 0 && fromAccount && toAccount && currentBalance > 0) {
         console.log(e)
@@ -327,6 +346,12 @@ const taskCompletion = async (e: number) => {
 
 const nestedToken = async () => {
     const account = await getAddress(mainAddressSelected);
+
+    if (lastCreatedCollectionID==0 || lastMintedTokenID==0 || lastCreatedRFTCollectionID == 0 || lastMintedRFTTokenID == 0){
+        RTFBalanceStatus.value = "Please makesure NFT and RFT collections and tokens are created";
+        throw new Error("Please makesure NFT and RFT collections and tokens are created");
+    }
+
     RTFBalanceStatus.value = "Token Nesting started";
     const result = await sdk.tokens.nest.submitWaitResult({
         address: account.address,
@@ -412,6 +437,24 @@ const getBundle = async () => {
     </div>
     <div style="border: 2px solid white;padding: 30px 30px;margin: 10px;">
         <h3>RFT Transfer (Collecting Loyalty Tokens)</h3>
+        <select id="selectRFTTokenID" @change="getTokenIDAccount($event.target.value)" class="select-custom">
+            <option>Select Loyalty Token</option>
+            <option v-for="option in tokenIDs" :key="option.tokenId" :value="option.tokenId">
+                {{ option.tokenId }}
+            </option>
+        </select>
+        <select id="selectRFTFromAdd" @change="getFromAccount($event.target.value)" class="select-custom">
+            <option>Select From Address</option>
+            <option v-for="option in walletResult?.accounts" :key="option.address" :value="option.address">
+                {{ option.name }}
+            </option>
+        </select>
+        <select id="selectRFTToAdd" @change="getToAccount($event.target.value)" class="select-custom">
+            <option>Select To Address</option>
+            <option v-for="option in walletResult?.accounts" :key="option.address" :value="option.address">
+                {{ option.name }}
+            </option>
+        </select>
         <div style="text-align: left;">
             <div>
                 <input type="checkbox" name="subscribe" id="Task1" @change="taskCompletion(1)" />
@@ -427,29 +470,16 @@ const getBundle = async () => {
             </div>
 
         </div>
-        <select id="selectRFTTokenID" @change="getTokenIDAccount($event.target.value)" class="select-custom">
-            <option>--Select Loyalty Token--</option>
-            <option v-for="option in tokenIDs" :key="option.tokenId" :value="option.tokenId">
-                {{ option.tokenId }}
-            </option>
-        </select>
-        <select id="selectRFTFromAdd" @change="getFromAccount($event.target.value)" class="select-custom">
-            <option>--Select From Address--</option>
-            <option v-for="option in walletResult?.accounts" :key="option.address" :value="option.address">
-                {{ option.name }}
-            </option>
-        </select>
-        <select id="selectRFTToAdd" @change="getToAccount($event.target.value)" class="select-custom">
-            <option>--Select To Address--</option>
-            <option v-for="option in walletResult?.accounts" :key="option.address" :value="option.address">
-                {{ option.name }}
-            </option>
-        </select>
+        <div class="form-control">
+            <label class="lbl-custom">RFT Amount #</label>
+            <input type="text" v-model="RFTTransferAmounttxt" name="amount" placeholder="RFT Amount" />
+        </div>
+        <p>Check boxes will initiate RTF transfers, For manual operation use the "DT Transer"</p>
         <button @click="RFTTransferToAddress">DT Transfer</button>
         <p> {{ RTFtransferStatus }}</p>
     </div>
     <div style="border: 2px solid white;padding: 30px 30px;margin: 10px;">
-        <button @click="RTFBalanceCheck">Check Balance</button>
+        <button @click="RTFCheckBalanceMainAccount">Check Balance</button>
         <button @click="nestedToken">Nested</button>
         <button @click="getBundle">Bundle</button>
         <div v-if="bundleRef">
