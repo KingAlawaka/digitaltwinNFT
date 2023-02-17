@@ -3,6 +3,7 @@
 A Digital Twin (DT) is a virtual representation of a physical asset or process used to improve its physical counterpart's operational conditions and enhance its capabilities. To do that, data is essential, and service providers need access to this generated data to provide improved services. However, currently there needs to be a proper platform to harvest this from data owners. The proposed Digital Twin NFTs will provide a loyalty platform that rewards shared data to incentivise this collaboration. Another problem of the current DT landscape is tracking DT's operational history and transferring its ownership transparently. Using NFTs, transfers and tracking changes are streamlined. 
 
 [Demo video](https://youtu.be/Ju8dIW6mcjk)
+[Demo app](https://digitaltwinnft.web.app/)
 
 ```yarn create vite webportal --template=vue-ts
 
@@ -40,11 +41,13 @@ Use [Unique Opal Network faucet bot](https://t.me/unique2faucet_opal_bot) for ge
 
 ### Known issues and limitations
 1. Limited account token validations and error checks are implemented in the current version.
-2. Only the collection owner can mint NFT/RFT tokens. Already tried updating the permission, but it did not work. 
+2. Only the collection owner can mint NFT/RFT tokens. Already tried updating the permission, but it did not work as SDK mentioned. 
 3. Nesting is only possible when the same account owns both tokens. Therefore, please select the correct account to create the NFT token.
 4. Since the application is connected to the Opal network, sometimes transactions fail due to network issues. Currently, these errors are not validated. 
 5. Current application does not store any off-chain data, and planning to improve that part.
 6. Current transaction records are not stored in the BC. A smart contract was created but did not work with the Unique SDK.
+7. Sometime accounts are not detected from the extention. Need a page refresh.
+8. Sometimes it will take time to load selectboxes because it will take sometime to fecth data from the Opal BC
 
 ### Possible imporvements for the final
 1. Smart contract integration for transactions and other important information.

@@ -189,7 +189,7 @@ const mintRFTToken = async () => {
     tokenIDs.value.push(tokenResult.parsed)
     loading.value = false;
     console.log(tokenResult.parsed)
-    mintTokenStatus.value = "Minted DT NFT: Collection= " + tokenResult.parsed?.collectionId + " NFT ID= " + tokenResult.parsed?.tokenId;
+    mintTokenStatus.value = "Minted DT RFT: Collection= " + tokenResult.parsed?.collectionId + " RFT ID= " + tokenResult.parsed?.tokenId;
     RTFTotalAmount = parseInt(collectionTaskstxt.value);
     await getToken(tokenResult.parsed?.collectionId, tokenResult.parsed?.tokenId);
     lastCreatedRFTCollectionID = tokenResult.parsed?.collectionId!;
@@ -248,14 +248,21 @@ const RFTTransferToAddress = async () => {
     await RTFBalanceCheck();
     const currentBalance = RFTCurrentBalance;
     if (currentBalance <= 0) {
-        RTFtransferStatus.value = "Insufficient token balance, Please change the account";
+        RTFtransferStatus.value = "Insufficient token balance...Please change the account";
         throw new Error('Insufficient token balance, Please change the account')
     }
+    
     const collectionId = collectionIDs.value[0]
     let transferAmount = 1;
     if (parseInt(RFTTransferAmounttxt.value) > 0){
         transferAmount = parseInt(RFTTransferAmounttxt.value);
     }
+
+    if (transferAmount > currentBalance){
+        RTFtransferStatus.value = "Insufficient token balance...Please change the amount";
+        throw new Error('Insufficient token balance...Please change the amount')
+    }
+
     RTFtransferStatus.value = "DT transfer on progress..."
     const tokenTransferResult = await sdk.refungible.transferToken.submitWaitResult({
         address: fromAccount.address,
